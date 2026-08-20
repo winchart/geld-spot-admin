@@ -130,46 +130,35 @@
         }
         .btn:hover { background-color: #be185d; }
         
-        /* ফুল-স্ক্রিন অ্যাড মডাল */
+        /* ফ্লোটিং টাইমার পপআপ (স্ক্রিনের উপরে দেখাবে) */
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: #000000;
+            background: rgba(0, 0, 0, 0.85);
             z-index: 1000;
             flex-direction: column;
-            box-sizing: border-box;
-        }
-        .modal-content {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             box-sizing: border-box;
         }
         
-        .in-app-ad-frame {
-            flex-grow: 1;
-            width: 100%;
-            height: 100%;
-            background: #ffffff;
-            border: none;
+        .timer-box {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            border: 2px solid var(--primary);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 320px;
+            width: 90%;
         }
 
-        .ad-timer-bar {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: rgba(15, 23, 42, 0.85);
+        .ad-timer-display {
+            font-size: 32px;
             color: #f59e0b;
-            padding: 8px 16px;
-            border-radius: 20px;
             font-weight: bold;
-            font-size: 15px;
-            border: 1px solid #db2777;
-            z-index: 1010;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            margin: 15px 0;
         }
 
         #toastNotification {
@@ -228,19 +217,20 @@
     <div id="dynamicPostsContainer"></div>
 </div>
 
-<!-- ফুল-স্ক্রিন অটো-ক্লোজ অ্যাড মডাল উইথ লাইভ টাইমার -->
+<!-- টাইমার স্ক্রিন মডাল -->
 <div id="taskModal" class="modal">
-    <div class="modal-content">
-        <div id="adTimerBar" class="ad-timer-bar">টাইমার: ১০ সে.</div>
-        <iframe id="adIframe" class="in-app-ad-frame" src=""></iframe>
+    <div class="timer-box">
+        <h3 style="color: #f472b6; margin-top: 0;">অ্যাড ভিজিট চলছে...</h3>
+        <p style="font-size: 13px; color: #94a3b8; margin: 0;">দয়া করে নতুন ট্যাবে ওপেন হওয়া লিংকে অপেক্ষা করুন।</p>
+        <div id="adTimerDisplay" class="ad-timer-display">১০ সে.</div>
     </div>
 </div>
 
 <div id="toastNotification">সফল বার্তা</div>
 
 <!-- প্রোফাইল মডাল -->
-<div id="profileModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px; justify-content: center; align-items: center;">
-    <div style="background: var(--card-bg); width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; text-align: left;">
+<div id="profileModal" class="modal" style="padding: 20px;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; text-align: left; border: 1px solid #334155;">
         <h3 style="color: #f472b6; margin-top: 0;">👤 Profile</h3>
         <p><b>Name:</b> <span id="profileName">Loading...</span></p>
         <p><b>Telegram UID:</b> <span id="profileId">Loading...</span></p>
@@ -249,8 +239,8 @@
 </div>
 
 <!-- চেকআউট মডাল -->
-<div id="checkoutModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px; justify-content: center; align-items: center;">
-    <div style="background: var(--card-bg); width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; text-align: left;">
+<div id="checkoutModal" class="modal" style="padding: 20px;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; text-align: left; border: 1px solid #334155;">
         <h3 id="modalTitle" style="color: #f472b6; margin-top:0;">পেমেন্ট করুন</h3>
         <div class="copy-box">
             <b id="agentNumber" style="color: #34d399;">01898385521</b>
@@ -281,10 +271,10 @@
     let adTimerInterval = null;
 
     window.onload = function() {
-        let checkCleared = localStorage.getItem('cache_cleared_v3');
+        let checkCleared = localStorage.getItem('cache_cleared_v4');
         if (!checkCleared) {
             localStorage.removeItem('admin_posts');
-            localStorage.setItem('cache_cleared_v3', 'true');
+            localStorage.setItem('cache_cleared_v4', 'true');
         }
         loadDynamicPosts();
     };
@@ -297,7 +287,7 @@
 
         if(posts.length === 0) {
             posts = [
-                { title: "Group Finder Tool", desc: "Very easy tool", type: "free", image: "https://iili.io/CQTNe8g.jpg", adLink: "https://www.google.com", fileLink: "#" }
+                { title: "Group Finder Tool", desc: "Very easy tool", type: "free", image: "https://iili.io/CQTNe8g.jpg", adLink: "https://google.com", fileLink: "#" }
             ];
         }
 
@@ -387,35 +377,25 @@
         
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
         let post = posts[activePostIndex] || {};
-        let targetUrl = post.adLink || "https://www.google.com";
+        let targetUrl = post.adLink || "https://google.com";
 
-        // যদি ইউটিউব বা এমন সাইট হয় যা iframe ব্লক করে, তবে নতুন ট্যাবে ওপেন করে টাইমার রান করবে
-        if (targetUrl.includes('youtube.com') || targetUrl.includes('youtu.be') || targetUrl.includes('facebook.com')) {
-            window.open(targetUrl, '_blank');
-        }
+        // আপনি অ্যাডমিন প্যানেলে যে লিংকটি দেবেন, সেটি সরাসরি নতুন ট্যাবে ওপেন হবে
+        window.open(targetUrl, '_blank');
 
+        // স্ক্রিনে টাইমার পপআপ শো করবে
         document.getElementById('taskModal').style.display = 'flex';
-        runAdTimerStep(targetUrl);
+        runAdTimerStep();
     }
 
-    function runAdTimerStep(url) {
-        let adIframe = document.getElementById('adIframe');
-        let timerBar = document.getElementById('adTimerBar');
-
-        // যদি ইউটিউব বা ব্লকড লিংক হয়, আইফ্রেম ফাঁকা রেখে ব্যাকগ্রাউন্ডে টাইমার চলবে
-        if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('facebook.com')) {
-            adIframe.src = "about:blank";
-        } else {
-            adIframe.src = url;
-        }
-
-        let timeLeft = 10;
-        timerBar.innerText = `টাইমার: ${timeLeft} সে.`;
+    function runAdTimerStep() {
+        let timerDisplay = document.getElementById('adTimerDisplay');
+        let timeLeft = 10; // ১০ সেকেন্ড টাইমার
+        timerDisplay.innerText = `${timeLeft} সে.`;
 
         clearInterval(adTimerInterval);
         adTimerInterval = setInterval(() => {
             timeLeft--;
-            timerBar.innerText = `টাইমার: ${timeLeft} সে.`;
+            timerDisplay.innerText = `${timeLeft} সে.`;
             if (timeLeft <= 0) {
                 clearInterval(adTimerInterval);
                 finishCurrentAdStep();
@@ -425,7 +405,6 @@
 
     function finishCurrentAdStep() {
         document.getElementById('taskModal').style.display = 'none';
-        document.getElementById('adIframe').src = ''; 
 
         let userId = (currentUser && currentUser.id) ? currentUser.id : 'guest_user';
 
