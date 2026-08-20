@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --primary: #4f46e5;
+            --primary: #db2777; /* স্ক্রিনশটের মতো আকর্ষণীয় গোলাপি/ম্যাজেন্টা কালার */
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --text-color: #f8fafc;
@@ -26,14 +26,14 @@
             border-bottom: 2px solid #334155;
             position: relative;
         }
-        h1 { margin: 0; color: #818cf8; font-size: 22px; }
+        h1 { margin: 0; color: #f472b6; font-size: 22px; }
         
         .profile-icon {
             position: absolute;
             top: 20px;
             right: 20px;
             background: #334155;
-            color: #818cf8;
+            color: #f472b6;
             padding: 8px 12px;
             border-radius: 50%;
             cursor: pointer;
@@ -44,7 +44,7 @@
             width: 25px;
             height: 25px;
             font-size: 16px;
-            border: 1px solid #4f46e5;
+            border: 1px solid #db2777;
         }
 
         .search-container {
@@ -65,8 +65,8 @@
             transition: 0.3s;
         }
         .search-input:focus {
-            border-color: #818cf8;
-            box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
+            border-color: #f472b6;
+            box-shadow: 0 0 8px rgba(219, 39, 119, 0.4);
         }
 
         .container {
@@ -79,6 +79,7 @@
             margin-bottom: 15px;
             border-left: 4px solid var(--primary);
             padding-left: 10px;
+            color: #f472b6;
         }
         .grid {
             display: grid;
@@ -111,30 +112,24 @@
             justify-content: space-between;
         }
         .card h3 { margin: 0 0 5px 0; color: #cbd5e1; font-size: 18px; }
+        .card p { color: #94a3b8; font-size: 13px; margin-bottom: 10px; }
+        .price { font-size: 15px; color: #34d399; font-weight: bold; margin-bottom: 12px; }
         
-        .details-link { 
-            display: inline-block;
-            margin: 8px 0 12px 0; 
-            color: #818cf8; 
-            cursor: pointer; 
-            font-size: 14px; 
-            font-weight: bold;
-        }
-        .details-link:hover { text-decoration: underline; }
-        .card p { color: #94a3b8; font-size: 13px; margin-bottom: 0; }
-        .price { font-size: 18px; color: #34d399; font-weight: bold; margin-bottom: 12px; }
         .btn {
             background-color: var(--primary);
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 6px;
+            padding: 12px 15px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             width: 100%;
             transition: 0.3s;
+            font-size: 15px;
+            text-align: center;
+            box-sizing: border-box;
         }
-        .btn:hover { background-color: #4338ca; }
+        .btn:hover { background-color: #be185d; }
         
         .modal {
             display: none;
@@ -179,7 +174,7 @@
             margin: 8px 0 15px 0;
         }
         .copy-btn {
-            background: #334155; border: none; color: #818cf8;
+            background: #334155; border: none; color: #f472b6;
             padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
         }
 
@@ -223,10 +218,9 @@
 <div id="taskModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeTaskModal()">&times;</span>
-        <h3 style="color: #818cf8; margin-top: 0;" id="taskModalTitle">UNLOCK — 1/3 ADS</h3>
+        <h3 style="color: #f472b6; margin-top: 0;" id="taskModalTitle">UNLOCK — 1/3 ADS</h3>
         
         <div class="in-app-ad-box" id="adContainerBox">
-            <!-- এখানে সাইটের ভেতরেই অ্যাড বা কন্টেন্ট দেখাবে -->
             <p id="adInstruction" style="color: #94a3b8; font-size: 14px; margin: 0;">অ্যাড লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</p>
             <div id="timerText" class="timer-display">টাইমার: ১০ সেকেন্ড</div>
         </div>
@@ -235,17 +229,18 @@
     </div>
 </div>
 
-<!-- প্রোফাইল ও চেকআউট মডাল -->
+<!-- প্রোফাইল মডাল -->
 <div id="profileModal" class="modal">
     <div class="modal-content" style="text-align: left;">
         <span class="close" onclick="closeProfileModal()">&times;</span>
-        <h3 style="color: #818cf8; margin-top: 0;">👤 Profile</h3>
+        <h3 style="color: #f472b6; margin-top: 0;">👤 Profile</h3>
         <p><b>Name:</b> <span id="profileName">Loading...</span></p>
         <p><b>Telegram UID:</b> <span id="profileId">Loading...</span></p>
         <button class="btn" onclick="closeProfileModal()">Close</button>
     </div>
 </div>
 
+<!-- চেকআউট মডাল -->
 <div id="checkoutModal" class="modal">
     <div class="modal-content" style="text-align: left;">
         <span class="close" onclick="closeCheckout()">&times;</span>
@@ -272,20 +267,12 @@
     let currentUser = tg.initDataUnsafe?.user;
 
     let activePostIndex = null;
-    let currentAdStep = 1; // মোট ৩টি অ্যাড
+    let currentAdStep = 1;
     let adTimerInterval = null;
 
     window.onload = function() {
-        trackVisitor();
         loadDynamicPosts();
     };
-
-    function trackVisitor() {
-        let today = new Date().toISOString().split('T')[0];
-        let visits = JSON.parse(localStorage.getItem('site_visits') || '[]');
-        visits.push({ date: today, country: "Bangladesh" });
-        localStorage.setItem('site_visits', JSON.stringify(visits));
-    }
 
     function loadDynamicPosts() {
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
@@ -300,31 +287,23 @@
         posts.forEach((post, index) => {
             let isFree = post.type === 'free';
             let isUnlocked = localStorage.getItem(`unlocked_${index}`) === 'true';
+            let stepCount = localStorage.getItem(`step_${index}`) || '1';
+            if(isUnlocked) stepCount = '3';
 
-            let priceHTML = '';
+            let actionButtonHTML = '';
             if(isFree) {
                 if(isUnlocked) {
-                    priceHTML = `
-                        <div class="price" style="color: #34d399;">আনলক করা হয়েছে</div>
-                        <button class="btn" style="background-color: #34d399; color: #0f172a;" onclick="downloadFile('${post.fileLink}')">📥 Download Now</button>
-                    `;
+                    actionButtonHTML = `<button class="btn" style="background-color: #34d399; color: #0f172a;" onclick="downloadFile('${post.fileLink}')">📥 Download Now</button>`;
                 } else {
-                    priceHTML = `
-                        <div class="price" style="color: #60a5fa;">সম্পূর্ণ ফ্রি (Task Based)</div>
-                        <span class="details-link" onclick="startTaskProcess(${index})">🚀 UNLOCK — 0/3 ADS</span>
-                        <button class="btn" id="dlBtn_${index}" disabled style="background-color: #475569; cursor: not-allowed;">🔒 Locked</button>
-                    `;
+                    actionButtonHTML = `<button class="btn" onclick="startTaskProcess(${index})">🚀 UNLOCK — ${stepCount}/3 ADS</button>`;
                 }
             } else {
-                priceHTML = `
-                    <div class="price" style="color: #34d399;">${post.price} টাকা</div>
-                    <button class="btn" onclick="openCheckout('${post.title}', '${post.price} টাকা')">Buy Now</button>
-                `;
+                actionButtonHTML = `<button class="btn" onclick="openCheckout('${post.title}', '${post.price} টাকা')">Buy Now (${post.price} ৳)</button>`;
             }
 
             let html = `
                 <div class="section-category">
-                    <div class="section-title">${post.category || 'ক্যাটেগরি'}</div>
+                    <div class="section-title">${post.category || 'Tools'}</div>
                     <div class="grid">
                         <div class="card" data-name="${post.title.toLowerCase()}">
                             <img src="${post.image || 'https://iili.io/CQTNe8g.jpg'}" alt="Post" class="card-img">
@@ -334,7 +313,7 @@
                                     <p>${post.desc}</p>
                                 </div>
                                 <div style="margin-top: 15px;">
-                                    ${priceHTML}
+                                    ${actionButtonHTML}
                                 </div>
                             </div>
                         </div>
@@ -367,7 +346,6 @@
         }
     }
 
-    // --- ইন-অ্যাপ টাস্ক ও অ্যাড সিস্টেম ---
     function startTaskProcess(index) {
         activePostIndex = index;
         currentAdStep = parseInt(localStorage.getItem(`step_${index}`) || '1');
@@ -380,6 +358,7 @@
     function closeTaskModal() {
         clearInterval(adTimerInterval);
         document.getElementById('taskModal').style.display = 'none';
+        loadDynamicPosts();
     }
 
     function runAdTimerStep() {
@@ -395,7 +374,7 @@
         
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
         let post = posts[activePostIndex];
-        let customAdContent = post.adLink ? `<a href="${post.adLink}" target="_blank" style="color: #818cf8; font-weight: bold; text-decoration: underline;">সাপোর্ট বা স্পন্সর ভিজিট করতে এখানে ক্লিক করুন</a>` : "এখানে স্পন্সর অ্যাড বা নোটিশ দেখানো হচ্ছে।";
+        let customAdContent = post.adLink ? `<a href="${post.adLink}" target="_blank" style="color: #f472b6; font-weight: bold; text-decoration: underline;">স্পন্সর ভিজিট বা টাস্ক সম্পন্ন করতে এখানে ক্লিক করুন</a>` : "এখানে স্পন্সর অ্যাড বা নোটিশ দেখানো হচ্ছে।";
 
         instruction.innerHTML = `অনুগ্রহ করে ১০ সেকেন্ড অপেক্ষা করুন。<br><br>${customAdContent}`;
 
@@ -422,11 +401,9 @@
             localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
             runAdTimerStep();
         } else {
-            // ৩টি টাস্ক শেষ, ফাইল আনলক
             localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
             alert('অভিনন্দন! আপনার সবকটি টাস্ক সফলভাবে সম্পন্ন হয়েছে এবং ফাইল আনলক হয়ে গেছে।');
             closeTaskModal();
-            loadDynamicPosts();
         }
     }
 
