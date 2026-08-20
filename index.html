@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --primary: #db2777; /* স্ক্রিনশটের মতো আকর্ষণীয় গোলাপি/ম্যাজেন্টা কালার */
+            --primary: #db2777; /* আকর্ষণীয় গোলাপি/ম্যাজেন্টা কালার */
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --text-color: #f8fafc;
@@ -287,13 +287,15 @@
         posts.forEach((post, index) => {
             let isFree = post.type === 'free';
             let isUnlocked = localStorage.getItem(`unlocked_${index}`) === 'true';
-            let stepCount = localStorage.getItem(`step_${index}`) || '1';
-            if(isUnlocked) stepCount = '3';
+            
+            // স্টেপ কাউন্ট হিসাব করা (যেমন: 0/3 ADS বা 1/3 ADS)
+            let stepCount = parseInt(localStorage.getItem(`step_${index}`) || '0');
+            if(isUnlocked) stepCount = 3;
 
             let actionButtonHTML = '';
             if(isFree) {
                 if(isUnlocked) {
-                    actionButtonHTML = `<button class="btn" style="background-color: #34d399; color: #0f172a;" onclick="downloadFile('${post.fileLink}')">📥 Download Now</button>`;
+                    actionButtonHTML = `<button class="btn" style="background-color: #10b981; color: white;" onclick="downloadFile('${post.fileLink}')">📥 Download Now</button>`;
                 } else {
                     actionButtonHTML = `<button class="btn" onclick="startTaskProcess(${index})">🚀 UNLOCK — ${stepCount}/3 ADS</button>`;
                 }
@@ -348,7 +350,7 @@
 
     function startTaskProcess(index) {
         activePostIndex = index;
-        currentAdStep = parseInt(localStorage.getItem(`step_${index}`) || '1');
+        currentAdStep = parseInt(localStorage.getItem(`step_${index}`) || '0') + 1;
         if(currentAdStep > 3) currentAdStep = 3;
         
         document.getElementById('taskModal').style.display = 'flex';
@@ -397,10 +399,12 @@
 
     function nextAdStep() {
         if (currentAdStep < 3) {
-            currentAdStep++;
             localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
-            runAdTimerStep();
+            closeTaskModal();
+            loadDynamicPosts();
         } else {
+            // ৩টি টাস্ক শেষ, ফাইল আনলক
+            localStorage.setItem(`step_${activePostIndex}`, '3');
             localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
             alert('অভিনন্দন! আপনার সবকটি টাস্ক সফলভাবে সম্পন্ন হয়েছে এবং ফাইল আনলক হয়ে গেছে।');
             closeTaskModal();
