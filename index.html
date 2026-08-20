@@ -140,27 +140,28 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            overflow-y: auto;
-            padding: 20px 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
         .modal-content {
             background: var(--card-bg);
             padding: 25px;
             border-radius: 12px;
-            width: 90%;
+            width: 100%;
             max-width: 400px;
             position: relative;
-            margin: auto;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
         .close {
-            position: absolute; top: 10px; right: 15px;
-            font-size: 24px; cursor: pointer; color: #aaa;
+            position: absolute; top: 12px; right: 15px;
+            font-size: 22px; cursor: pointer; color: #aaa;
         }
-        .form-group { margin-bottom: 12px; }
+        .form-group { margin-bottom: 12px; text-align: left; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 13px; }
         .form-group input, .form-group textarea {
             width: 100%; padding: 9px; border-radius: 5px; border: 1px solid #475569;
@@ -182,11 +183,24 @@
             padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
         }
 
-        .task-step {
-            background: #0f172a; border: 1px solid #334155; padding: 12px;
-            border-radius: 8px; margin-bottom: 10px; text-align: center;
+        .in-app-ad-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        .timer-text { font-size: 16px; color: #f59e0b; font-weight: bold; margin: 10px 0; }
+        .timer-display {
+            font-size: 18px;
+            color: #f59e0b;
+            font-weight: bold;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -205,21 +219,25 @@
     <div id="dynamicPostsContainer"></div>
 </div>
 
-<!-- অ্যাড ও টাস্ক পপআপ মডাল (ফ্রি ফাইলের জন্য) -->
+<!-- ইন-অ্যাপ টাস্ক এবং অ্যাড পপআপ মডাল -->
 <div id="taskModal" class="modal">
-    <div class="modal-content" style="max-width: 420px; text-align: center;">
+    <div class="modal-content">
         <span class="close" onclick="closeTaskModal()">&times;</span>
-        <h3 style="color: #818cf8; margin-top: 0;" id="modalTaskTitle">🎯 অ্যাড ভিজিট ও টাস্ক</h3>
+        <h3 style="color: #818cf8; margin-top: 0;" id="taskModalTitle">UNLOCK — 1/3 ADS</h3>
         
-        <div id="taskBoxBody">
-            <!-- এখানে ডাইনামিক স্টেপ লোড হবে -->
+        <div class="in-app-ad-box" id="adContainerBox">
+            <!-- এখানে সাইটের ভেতরেই অ্যাড বা কন্টেন্ট দেখাবে -->
+            <p id="adInstruction" style="color: #94a3b8; font-size: 14px; margin: 0;">অ্যাড লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</p>
+            <div id="timerText" class="timer-display">টাইমার: ১০ সেকেন্ড</div>
         </div>
+
+        <button class="btn" id="taskNextBtn" disabled style="background-color: #475569; cursor: not-allowed;" onclick="nextAdStep()">পরবর্তী ধাপ</button>
     </div>
 </div>
 
 <!-- প্রোফাইল ও চেকআউট মডাল -->
 <div id="profileModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="text-align: left;">
         <span class="close" onclick="closeProfileModal()">&times;</span>
         <h3 style="color: #818cf8; margin-top: 0;">👤 Profile</h3>
         <p><b>Name:</b> <span id="profileName">Loading...</span></p>
@@ -229,7 +247,7 @@
 </div>
 
 <div id="checkoutModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="text-align: left;">
         <span class="close" onclick="closeCheckout()">&times;</span>
         <h3 id="modalTitle">পেমেন্ট করুন</h3>
         <div class="copy-box">
@@ -253,9 +271,9 @@
     tg.expand();
     let currentUser = tg.initDataUnsafe?.user;
 
-    let currentPostIndex = null;
-    let currentStep = 1; // মোট ৩টি অ্যাড এবং ৪র্থ ধাপে অ্যাপ ডাউনলোড
-    let timerInterval = null;
+    let activePostIndex = null;
+    let currentAdStep = 1; // মোট ৩টি অ্যাড
+    let adTimerInterval = null;
 
     window.onload = function() {
         trackVisitor();
@@ -292,8 +310,8 @@
                     `;
                 } else {
                     priceHTML = `
-                        <div class="price" style="color: #60a5fa;">ফ্রি (অ্যাড দেখে আনলক করুন)</div>
-                        <span class="details-link" onclick="openTaskModal(${index})">🚀 টাস্ক স্টার্ট করুন</span>
+                        <div class="price" style="color: #60a5fa;">সম্পূর্ণ ফ্রি (Task Based)</div>
+                        <span class="details-link" onclick="startTaskProcess(${index})">🚀 UNLOCK — 0/3 ADS</span>
                         <button class="btn" id="dlBtn_${index}" disabled style="background-color: #475569; cursor: not-allowed;">🔒 Locked</button>
                     `;
                 }
@@ -349,57 +367,48 @@
         }
     }
 
-    // --- টাস্ক এবং অ্যাড পপআপ লজিক ---
-    function openTaskModal(index) {
-        currentPostIndex = index;
-        currentStep = parseInt(localStorage.getItem(`step_${index}`) || '1');
+    // --- ইন-অ্যাপ টাস্ক ও অ্যাড সিস্টেম ---
+    function startTaskProcess(index) {
+        activePostIndex = index;
+        currentAdStep = parseInt(localStorage.getItem(`step_${index}`) || '1');
+        if(currentAdStep > 3) currentAdStep = 3;
+        
         document.getElementById('taskModal').style.display = 'flex';
-        renderTaskStep();
+        runAdTimerStep();
     }
 
     function closeTaskModal() {
-        clearInterval(timerInterval);
+        clearInterval(adTimerInterval);
         document.getElementById('taskModal').style.display = 'none';
     }
 
-    function renderTaskStep() {
-        let bodyDiv = document.getElementById('taskBoxBody');
+    function runAdTimerStep() {
+        document.getElementById('taskModalTitle').innerText = `UNLOCK — ${currentAdStep}/3 ADS`;
+        let instruction = document.getElementById('adInstruction');
+        let timerText = document.getElementById('timerText');
+        let nextBtn = document.getElementById('taskNextBtn');
+
+        nextBtn.disabled = true;
+        nextBtn.style.backgroundColor = "#475569";
+        nextBtn.style.cursor = "not-allowed";
+        timerText.style.display = "block";
+        
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
-        let post = posts[currentPostIndex];
-        let adLink = post.adLink || "https://example.com/ad";
+        let post = posts[activePostIndex];
+        let customAdContent = post.adLink ? `<a href="${post.adLink}" target="_blank" style="color: #818cf8; font-weight: bold; text-decoration: underline;">সাপোর্ট বা স্পন্সর ভিজিট করতে এখানে ক্লিক করুন</a>` : "এখানে স্পন্সর অ্যাড বা নোটিশ দেখানো হচ্ছে।";
 
-        if (currentStep <= 3) {
-            bodyDiv.innerHTML = `
-                <p style="color: #cbd5e1;"><b>স্টেপ ${currentStep} / ৩:</b> নিচের বাটনে ক্লিক করে অ্যাড ভিজিট করুন।</p>
-                <button class="btn" onclick="startAdVisit('${adLink}')" style="margin: 10px 0;">🚀 অ্যাড ভিজিট করুন</button>
-                <div id="timerDisplay" class="timer-text" style="display: none;">টাইমার: <span id="secCount">10</span> সেকেন্ড</div>
-                <button class="btn" id="nextAdBtn" disabled style="background-color: #475569; cursor: not-allowed; margin-top: 10px;" onclick="nextStep()">পরবর্তী অ্যাড</button>
-            `;
-        } else {
-            bodyDiv.innerHTML = `
-                <p style="color: #cbd5e1;"><b>শেষ ধাপ (৪):</b> ফাইল আনলক করতে অ্যাপ বা অফারটি ডাউনলোড করুন।</p>
-                <button class="btn" onclick="downloadAppTask('${adLink}')" style="margin: 10px 0; background-color: #3b82f6;">📲 অ্যাপ ডাউনলোড করুন</button>
-                <button class="btn" id="verifyBtn" style="margin-top: 10px; background-color: #34d399; color: #0f172a;" onclick="verifyAndUnlock()">✅ ডাউনলোড সম্পন্ন হয়েছে (Verify)</button>
-            `;
-        }
-    }
+        instruction.innerHTML = `অনুগ্রহ করে ১০ সেকেন্ড অপেক্ষা করুন。<br><br>${customAdContent}`;
 
-    function startAdVisit(url) {
-        window.open(url, '_blank');
-        let timerSpan = document.getElementById('secCount');
-        let timerDiv = document.getElementById('timerDisplay');
-        timerDiv.style.display = 'block';
         let timeLeft = 10;
-        timerSpan.innerText = timeLeft;
+        timerText.innerText = `টাইমার: ${timeLeft} সেকেন্ড`;
 
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
+        clearInterval(adTimerInterval);
+        adTimerInterval = setInterval(() => {
             timeLeft--;
-            timerSpan.innerText = timeLeft;
+            timerText.innerText = `টাইমার: ${timeLeft} সেকেন্ড`;
             if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                timerDiv.innerText = "✅ অ্যাড দেখা শেষ!";
-                let nextBtn = document.getElementById('nextAdBtn');
+                clearInterval(adTimerInterval);
+                timerText.innerText = "✅ টাস্ক সম্পন্ন হয়েছে!";
                 nextBtn.disabled = false;
                 nextBtn.style.backgroundColor = "var(--primary)";
                 nextBtn.style.cursor = "pointer";
@@ -407,21 +416,18 @@
         }, 1000);
     }
 
-    function nextStep() {
-        currentStep++;
-        localStorage.setItem(`step_${currentPostIndex}`, currentStep);
-        renderTaskStep();
-    }
-
-    function downloadAppTask(url) {
-        window.open(url, '_blank');
-    }
-
-    function verifyAndUnlock() {
-        localStorage.setItem(`unlocked_${currentPostIndex}`, 'true');
-        alert('অভিনন্দন! আপনার ফাইলটি সফলভাবে আনলক হয়ে গেছে।');
-        closeTaskModal();
-        loadDynamicPosts();
+    function nextAdStep() {
+        if (currentAdStep < 3) {
+            currentAdStep++;
+            localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
+            runAdTimerStep();
+        } else {
+            // ৩টি টাস্ক শেষ, ফাইল আনলক
+            localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
+            alert('অভিনন্দন! আপনার সবকটি টাস্ক সফলভাবে সম্পন্ন হয়েছে এবং ফাইল আনলক হয়ে গেছে।');
+            closeTaskModal();
+            loadDynamicPosts();
+        }
     }
 
     function downloadFile(link) { 
