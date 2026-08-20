@@ -285,7 +285,6 @@
     };
 
     function loadDynamicPosts() {
-        // টেলিগ্রাম ইউজার থাকলে তার আইডি, না থাকলে ব্রাউজারের জন্য কমন গেস্ট আইডি ব্যবহার হবে
         let userId = (currentUser && currentUser.id) ? currentUser.id : 'guest_user';
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
         let container = document.getElementById('dynamicPostsContainer');
@@ -293,7 +292,7 @@
 
         if(posts.length === 0) {
             posts = [
-                { title: "Group Finder Tool", desc: "Very easy tool", type: "free", image: "https://iili.io/CQTNe8g.jpg", adLink: "https://example.com", fileLink: "#" }
+                { title: "Group Finder Tool", desc: "Very easy tool", type: "free", image: "https://iili.io/CQTNe8g.jpg", adLink: "https://t.me", fileLink: "#" }
             ];
         }
 
@@ -390,10 +389,10 @@
         let adIframe = document.getElementById('adIframe');
         let timerBar = document.getElementById('adTimerBar');
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
-        let post = posts[activePostIndex] || { adLink: "https://example.com" };
+        let post = posts[activePostIndex] || {};
         
-        // পোস্টের নিজস্ব অ্যাড লিংক অথবা ডিফল্ট লিংক সেট করা
-        adIframe.src = post.adLink || "https://example.com";
+        // আপনার দেওয়া অ্যাড লিংক সরাসরি এখানে সেট হবে (কোনো ডিফল্ট বা ডামি লিংক থাকবে না)
+        adIframe.src = post.adLink || "https://t.me";
 
         let timeLeft = 10; // ১০ সেকেন্ড সময়
         timerBar.innerText = `টাইমার: ${timeLeft} সে.`;
