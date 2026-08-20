@@ -19,6 +19,24 @@
             margin: 0;
             padding: 0;
         }
+
+        /* টেলিগ্রাম ছাড়া বা ভিপিএন ধরলে ফুল স্ক্রিন লোডিং বা ওয়ার্নিং স্ক্রিন */
+        #blockScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            text-align: center;
+            padding: 20px;
+        }
+        #blockScreen h2 { color: #f472b6; margin-bottom: 10px; }
+        #blockScreen p { color: #94a3b8; font-size: 15px; }
+
         header {
             background-color: var(--card-bg);
             padding: 20px;
@@ -157,7 +175,6 @@
             border: none;
         }
 
-        /* সুন্দর ফ্ল্যাট লাইভ টাইমার হেডার */
         .ad-timer-bar {
             position: absolute;
             top: 15px;
@@ -173,7 +190,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
-        /* টোস্ট নোটিফিকেশন স্টাইল (OK বাটন ছাড়া নিজে থেকেই হাইড হবে) */
         #toastNotification {
             position: fixed;
             bottom: 30px;
@@ -216,6 +232,12 @@
 </head>
 <body>
 
+<!-- টেলিগ্রাম বা ভিপিএন চেক করার ব্লক স্ক্রিন -->
+<div id="blockScreen">
+    <h2 id="blockTitle">Loading...</h2>
+    <p id="blockDesc">দয়া করে একটু অপেক্ষা করুন...</p>
+</div>
+
 <header>
     <h1>Geld Spot Shop</h1>
     <p style="margin:5px 0 0 0; font-size: 13px; color:#94a3b8;">Buy premium tools or complete tasks to get free!</p>
@@ -238,7 +260,6 @@
     </div>
 </div>
 
-<!-- টোস্ট নোটিফিকেশন বার -->
 <div id="toastNotification">সফল বার্তা</div>
 
 <!-- প্রোফাইল মডাল -->
@@ -262,7 +283,7 @@
         <form id="paymentForm" onsubmit="submitPayment(event)">
             <input type="hidden" id="productName">
             <input type="hidden" id="productPrice">
-            <div class="form-group"><label>টেলিগ্রাম UID</label><input type="number" id="tgUser" required></div>
+            <div class="form-group"><label>Telegram UID</label><input type="number" id="tgUser" required readonly></div>
             <div class="form-group"><label>প্রেরক নম্বর</label><input type="text" id="senderNumber" required></div>
             <div class="form-group"><label>টাকার পরিমাণ</label><input type="number" id="paidAmount" required></div>
             <div class="form-group"><label>স্ক্রিনশট</label><input type="file" id="paymentScreenshot" accept="image/*" required></div>
@@ -283,11 +304,44 @@
     let currentAdStep = 1;
     let adTimerInterval = null;
 
-    window.onload = function() {
+    window.onload = async function() {
+        // ১. টেলিগ্রাম ভ্যালিডেশন চেক (টেলিগ্রাম ছাড়া শুধু লোডিং দেখাবে)
+        if (!currentUser || !currentUser.id) {
+            document.getElementById('blockTitle').innerText = "Access Denied ❌";
+            document.getElementById('blockDesc').innerText = "দয়া করে শুধুমাত্র টেলিগ্রাম বট থেকে সাইটটি ওপেন করুন!";
+            return; // সাইট লোড হতে দেবে না
+        }
+
+        // ২. ভিপিএন/প্রক্সি ডিটেকশন চেক (সংশ্লিষ্ট API বা নেটওয়ার্ক ল্যাটেন্সি চেক করে ওয়ার্নিং দেওয়া)
+        let isVpnDetected = await checkVPNConnection();
+        if (isVpnDetected) {
+            document.getElementById('blockTitle').innerText = "VPN Detected! ⚠️";
+            document.getElementById('blockDesc').innerText = "অনুগ্রহ করে আপনার VPN বা Proxy বন্ধ করে পুনরায় সাইটে প্রবেশ করুন।";
+            return;
+        }
+
+        // সব ঠিক থাকলে ব্লক স্ক্রিন সরিয়ে মূল সাইট ওপেন করা
+        document.getElementById('blockScreen').style.display = 'none';
         loadDynamicPosts();
     };
 
+    // ফ্রি ভিপিএন চেকার ফাংশন (টাইমজোন ও আইপি ডেটা অ্যানালাইসিস)
+    async function checkVPNConnection() {
+        try {
+            let response = await fetch('https://ipapi.co/json/');
+            let data = await response.json();
+            // যদি হোস্টিং অর্গানাইজেশন বা প্রক্সি ট্যাগ পাওয়া যায়
+            if (data && (data.asn || "").toLowerCase().includes("vpn") || (data.org || "").toLowerCase().includes("hosting") || (data.org || "").toLowerCase().includes("proxy")) {
+                return true;
+            }
+        } catch (e) {
+            // নেটওয়ার্ক ফেইল করলে বাইপাস বা নরমাল রাখা যেতে পারে
+        }
+        return false;
+    }
+
     function loadDynamicPosts() {
+        let userId = currentUser ? currentUser.id : 'guest';
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
         let container = document.getElementById('dynamicPostsContainer');
         container.innerHTML = '';
@@ -300,9 +354,25 @@
 
         posts.forEach((post, index) => {
             let isFree = post.type === 'free';
-            let isUnlocked = localStorage.getItem(`unlocked_${index}`) === 'true';
             
-            let stepCount = parseInt(localStorage.getItem(`step_${index}`) || '0');
+            // টেলিগ্রাম ইউজার আইডি ভিত্তিক এবং ১২ ঘণ্টার টাইমআউট লজিক
+            let unlockKey = `unlocked_${userId}_${index}`;
+            let timeKey = `unlock_time_${userId}_${index}`;
+            let stepKey = `step_${userId}_${index}`;
+
+            let unlockTime = localStorage.getItem(timeKey);
+            if (unlockTime) {
+                let hoursPassed = (Date.now() - parseInt(unlockTime)) / (1000 * 60 * 60);
+                if (hoursPassed >= 12) {
+                    // ১২ ঘণ্টা পার হয়ে গেলে আবার লক করে দেওয়া
+                    localStorage.removeItem(unlockKey);
+                    localStorage.removeItem(timeKey);
+                    localStorage.removeItem(stepKey);
+                }
+            }
+
+            let isUnlocked = localStorage.getItem(unlockKey) === 'true';
+            let stepCount = parseInt(localStorage.getItem(stepKey) || '0');
             if(isUnlocked) stepCount = 3;
 
             let actionButtonHTML = '';
@@ -350,7 +420,7 @@
         document.getElementById('profileModal').style.display = 'flex';
     }
     function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
-    function copyNumber() { navigator.clipboard.writeText("01898385521"); alert('Copied!'); }
+    function copyNumber() { navigator.clipboard.writeText("01898385521"); showToast('Copied!'); }
 
     function searchProducts() {
         let input = document.getElementById('searchInput').value.toLowerCase();
@@ -363,7 +433,8 @@
 
     function startTaskProcess(index) {
         activePostIndex = index;
-        let savedStep = parseInt(localStorage.getItem(`step_${index}`) || '0');
+        let userId = currentUser.id;
+        let savedStep = parseInt(localStorage.getItem(`step_${userId}_${index}`) || '0');
         currentAdStep = savedStep + 1;
         if(currentAdStep > 3) currentAdStep = 3;
         
@@ -395,15 +466,19 @@
 
     function finishCurrentAdStep() {
         document.getElementById('taskModal').style.display = 'none';
-        document.getElementById('adIframe').src = ''; // আইফ্রেম ক্লিয়ার করা
+        document.getElementById('adIframe').src = ''; 
+
+        let userId = currentUser.id;
 
         if (currentAdStep < 3) {
-            localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
+            localStorage.setItem(`step_${userId}_${activePostIndex}`, currentAdStep);
             showToast(`৩ টির মধ্যে ${currentAdStep} টি অ্যাড দেখা হয়েছে!`);
             loadDynamicPosts();
         } else {
-            localStorage.setItem(`step_${activePostIndex}`, '3');
-            localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
+            localStorage.setItem(`step_${userId}_${activePostIndex}`, '3');
+            localStorage.setItem(`unlocked_${userId}_${activePostIndex}`, 'true');
+            localStorage.setItem(`unlock_time_${userId}_${activePostIndex}`, Date.now().toString()); // ১২ ঘণ্টা কাউন্টডাউন শুরু
+            
             showToast('৩ টির মধ্যে ৩ টি অ্যাড দেখা হয়েছে! ফাইল আনলক হয়ে গেছে।');
             loadDynamicPosts();
         }
