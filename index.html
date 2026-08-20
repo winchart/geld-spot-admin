@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --primary: #db2777; /* আকর্ষণীয় গোলাপি/ম্যাজেন্টা কালার */
+            --primary: #db2777; /* গোলাপী/ম্যাজেন্টা কালার */
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --text-color: #f8fafc;
@@ -143,18 +143,36 @@
         }
         .modal-content {
             background: var(--card-bg);
-            padding: 25px;
+            padding: 20px;
             border-radius: 12px;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             position: relative;
             text-align: center;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
         .close {
-            position: absolute; top: 12px; right: 15px;
+            position: absolute; top: 10px; right: 15px;
             font-size: 22px; cursor: pointer; color: #aaa;
         }
+        
+        /* ইন-সাইড পপআপ অ্যাড ফ্রেম স্টাইল */
+        .in-app-ad-frame {
+            width: 100%;
+            height: 280px;
+            background: #ffffff;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .timer-display {
+            font-size: 16px;
+            color: #f59e0b;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+
         .form-group { margin-bottom: 12px; text-align: left; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 13px; }
         .form-group input, .form-group textarea {
@@ -175,25 +193,6 @@
         .copy-btn {
             background: #334155; border: none; color: #f472b6;
             padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
-        }
-
-        .in-app-ad-box {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .timer-display {
-            font-size: 18px;
-            color: #f59e0b;
-            font-weight: bold;
-            margin-top: 10px;
         }
     </style>
 </head>
@@ -219,10 +218,12 @@
         <span class="close" onclick="closeTaskModal()">&times;</span>
         <h3 style="color: #f472b6; margin-top: 0;" id="taskModalTitle">UNLOCK — 1/3 ADS</h3>
         
-        <div class="in-app-ad-box" id="adContainerBox">
-            <p id="adInstruction" style="color: #94a3b8; font-size: 14px; margin: 0;">অ্যাড লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</p>
-            <div id="timerText" class="timer-display">টাইমার: ১০ সেকেন্ড</div>
-        </div>
+        <p id="adInstruction" style="color: #94a3b8; font-size: 13px; margin: 5px 0;">নিচের উইন্ডোতে অ্যাড বা লিংক লোড হচ্ছে...</p>
+        
+        <!-- সাইটের ভেতরেই পপ-আপ উইন্ডো বা আইফ্রেম -->
+        <iframe id="adIframe" class="in-app-ad-frame" src=""></iframe>
+
+        <div id="timerText" class="timer-display">টাইমার: ১০ সেকেন্ড</div>
 
         <button class="btn" id="taskNextBtn" disabled style="background-color: #475569; cursor: not-allowed;" onclick="nextAdStep()">পরবর্তী ধাপ</button>
     </div>
@@ -270,8 +271,6 @@
     let adTimerInterval = null;
 
     window.onload = function() {
-        // প্রথমবার ওপেন করলে লোকালস্টোরেজ ক্লিয়ার করে ০/৩ নিশ্চিত করার জন্য (যদি টেস্ট করতে চান)
-        // localStorage.clear(); 
         loadDynamicPosts();
     };
 
@@ -281,15 +280,17 @@
         container.innerHTML = '';
 
         if(posts.length === 0) {
-            container.innerHTML = `<p style="text-align:center; color:#94a3b8;">কোনো পোস্ট পাওয়া যায়নি। অ্যাডমিন প্যানেল থেকে পোস্ট যোগ করুন।</p>`;
-            return;
+            // ডিফল্ট ডেমো পোস্ট দেখানোর ব্যবস্থা যাতে সাথে সাথে জিরো বাই থ্রি দেখা যায়
+            posts = [
+                { title: "Group Finder Tool", desc: "Very easy tool", type: "free", image: "https://iili.io/CQTNe8g.jpg", adLink: "https://example.com", fileLink: "#" }
+            ];
         }
 
         posts.forEach((post, index) => {
             let isFree = post.type === 'free';
             let isUnlocked = localStorage.getItem(`unlocked_${index}`) === 'true';
             
-            // শুরু থেকে শূন্য বা বর্তমান ধাপ দেখানোর লজিক
+            // শুরু থেকে একদম ০/৩ দেখানোর লজিক
             let stepCount = parseInt(localStorage.getItem(`step_${index}`) || '0');
             if(isUnlocked) stepCount = 3;
 
@@ -367,9 +368,9 @@
 
     function runAdTimerStep() {
         document.getElementById('taskModalTitle').innerText = `UNLOCK — ${currentAdStep}/3 ADS`;
-        let instruction = document.getElementById('adInstruction');
         let timerText = document.getElementById('timerText');
         let nextBtn = document.getElementById('taskNextBtn');
+        let adIframe = document.getElementById('adIframe');
 
         nextBtn.disabled = true;
         nextBtn.style.backgroundColor = "#475569";
@@ -377,14 +378,10 @@
         timerText.style.display = "block";
         
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
-        let post = posts[activePostIndex];
-        let adTargetLink = post.adLink || "https://example.com";
-
-        // ইউজার লিংকে ক্লিক করলে নতুন ট্যাবে ওপেন হবে এবং মডালেই ১০ সেকেন্ড কাউন্টডাউন চলতে থাকবে
-        instruction.innerHTML = `
-            ধাপ ${currentAdStep}: নিচের লিংকে ক্লিক করে ভিজিট করুন:<br><br>
-            <a href="${adTargetLink}" target="_blank" onclick="userClickedAdLink()" style="color: #f472b6; font-weight: bold; text-decoration: underline; font-size: 16px;">🔗 ভিজিট করতে এখানে ক্লিক করুন</a>
-        `;
+        let post = posts[activePostIndex] || { adLink: "https://example.com" };
+        
+        // সাইটের ভেতরেই পপ-আপ উইন্ডোতে লিংক লোড করা
+        adIframe.src = post.adLink || "https://example.com";
 
         let timeLeft = 10;
         timerText.innerText = `টাইমার: ${timeLeft} সেকেন্ড`;
@@ -403,17 +400,13 @@
         }, 1000);
     }
 
-    function userClickedAdLink() {
-        // ইউজার লিংকে ক্লিক করার পর ব্যাকগ্রাউন্ড বা মডালে ট্র্যাকিং রাখতে চাইলে এখানে কোড দেওয়া যায়
-    }
-
     function nextAdStep() {
         if (currentAdStep < 3) {
             localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
             closeTaskModal();
             loadDynamicPosts();
         } else {
-            // ৩টি টাস্ক কমপ্লিট হলে ফাইল আনলক হয়ে যাবে
+            // ৩টি টাস্ক কমপ্লিট হলে ফাইল আনলক
             localStorage.setItem(`step_${activePostIndex}`, '3');
             localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
             alert('অভিনন্দন! আপনার সবকটি টাস্ক সফলভাবে সম্পন্ন হয়েছে এবং ফাইল আনলক হয়ে গেছে।');
