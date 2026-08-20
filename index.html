@@ -113,7 +113,6 @@
         }
         .card h3 { margin: 0 0 5px 0; color: #cbd5e1; font-size: 18px; }
         .card p { color: #94a3b8; font-size: 13px; margin-bottom: 10px; }
-        .price { font-size: 15px; color: #34d399; font-weight: bold; margin-bottom: 12px; }
         
         .btn {
             background-color: var(--primary);
@@ -271,6 +270,8 @@
     let adTimerInterval = null;
 
     window.onload = function() {
+        // প্রথমবার ওপেন করলে লোকালস্টোরেজ ক্লিয়ার করে ০/৩ নিশ্চিত করার জন্য (যদি টেস্ট করতে চান)
+        // localStorage.clear(); 
         loadDynamicPosts();
     };
 
@@ -288,7 +289,7 @@
             let isFree = post.type === 'free';
             let isUnlocked = localStorage.getItem(`unlocked_${index}`) === 'true';
             
-            // স্টেপ কাউন্ট হিসাব করা (যেমন: 0/3 ADS বা 1/3 ADS)
+            // শুরু থেকে শূন্য বা বর্তমান ধাপ দেখানোর লজিক
             let stepCount = parseInt(localStorage.getItem(`step_${index}`) || '0');
             if(isUnlocked) stepCount = 3;
 
@@ -350,7 +351,8 @@
 
     function startTaskProcess(index) {
         activePostIndex = index;
-        currentAdStep = parseInt(localStorage.getItem(`step_${index}`) || '0') + 1;
+        let savedStep = parseInt(localStorage.getItem(`step_${index}`) || '0');
+        currentAdStep = savedStep + 1;
         if(currentAdStep > 3) currentAdStep = 3;
         
         document.getElementById('taskModal').style.display = 'flex';
@@ -376,9 +378,13 @@
         
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
         let post = posts[activePostIndex];
-        let customAdContent = post.adLink ? `<a href="${post.adLink}" target="_blank" style="color: #f472b6; font-weight: bold; text-decoration: underline;">স্পন্সর ভিজিট বা টাস্ক সম্পন্ন করতে এখানে ক্লিক করুন</a>` : "এখানে স্পন্সর অ্যাড বা নোটিশ দেখানো হচ্ছে।";
+        let adTargetLink = post.adLink || "https://example.com";
 
-        instruction.innerHTML = `অনুগ্রহ করে ১০ সেকেন্ড অপেক্ষা করুন。<br><br>${customAdContent}`;
+        // ইউজার লিংকে ক্লিক করলে নতুন ট্যাবে ওপেন হবে এবং মডালেই ১০ সেকেন্ড কাউন্টডাউন চলতে থাকবে
+        instruction.innerHTML = `
+            ধাপ ${currentAdStep}: নিচের লিংকে ক্লিক করে ভিজিট করুন:<br><br>
+            <a href="${adTargetLink}" target="_blank" onclick="userClickedAdLink()" style="color: #f472b6; font-weight: bold; text-decoration: underline; font-size: 16px;">🔗 ভিজিট করতে এখানে ক্লিক করুন</a>
+        `;
 
         let timeLeft = 10;
         timerText.innerText = `টাইমার: ${timeLeft} সেকেন্ড`;
@@ -397,13 +403,17 @@
         }, 1000);
     }
 
+    function userClickedAdLink() {
+        // ইউজার লিংকে ক্লিক করার পর ব্যাকগ্রাউন্ড বা মডালে ট্র্যাকিং রাখতে চাইলে এখানে কোড দেওয়া যায়
+    }
+
     function nextAdStep() {
         if (currentAdStep < 3) {
             localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
             closeTaskModal();
             loadDynamicPosts();
         } else {
-            // ৩টি টাস্ক শেষ, ফাইল আনলক
+            // ৩টি টাস্ক কমপ্লিট হলে ফাইল আনলক হয়ে যাবে
             localStorage.setItem(`step_${activePostIndex}`, '3');
             localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
             alert('অভিনন্দন! আপনার সবকটি টাস্ক সফলভাবে সম্পন্ন হয়েছে এবং ফাইল আনলক হয়ে গেছে।');
