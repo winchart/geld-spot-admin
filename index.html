@@ -130,54 +130,35 @@
         }
         .btn:hover { background-color: #be185d; }
         
-        /* ফুল-স্ক্রিন পপআপ মডাল স্টাইল */
+        /* সম্পূর্ণ স্ক্রিন জুড়ে পপআপ মডাল (নো ক্রস, নো বাটন) */
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: #000000;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            padding: 10px;
+            padding: 0;
             box-sizing: border-box;
         }
         .modal-content {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 8px;
+            background: #000000;
             width: 100%;
             height: 100%;
-            max-width: 100%;
-            max-height: 100%;
             position: relative;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
         }
-        .close {
-            position: absolute; top: 10px; right: 15px;
-            font-size: 26px; cursor: pointer; color: #fff; z-index: 10;
-            background: rgba(0,0,0,0.5); width: 35px; height: 35px;
-            display: flex; align-items: center; justify-content: center; border-radius: 50%;
-        }
         
-        /* অ্যাড বা আইফ্রেম যা সম্পূর্ণ স্ক্রিন জুড়ে থাকবে */
+        /* অ্যাড বা আইফ্রেম যা একদম ফুল স্ক্রিন থাকবে */
         .in-app-ad-frame {
             flex-grow: 1;
             width: 100%;
+            height: 100%;
             background: #ffffff;
             border: none;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .timer-display {
-            font-size: 16px;
-            color: #f59e0b;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 8px;
         }
 
         .form-group { margin-bottom: 12px; text-align: left; }
@@ -219,24 +200,16 @@
     <div id="dynamicPostsContainer"></div>
 </div>
 
-<!-- ফুল-স্ক্রিন ইন-অ্যাপ অ্যাড পপআপ মডাল -->
+<!-- ফুল-স্ক্রিন অটো-ক্লোজ অ্যাড পপআপ মডাল -->
 <div id="taskModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeTaskModal()">&times;</span>
-        
-        <!-- সম্পূর্ণ স্ক্রিন জুড়ে শুধু অ্যাড/আইফ্রেম -->
         <iframe id="adIframe" class="in-app-ad-frame" src=""></iframe>
-
-        <div id="timerText" class="timer-display">টাইমার: ১০ সেকেন্ড</div>
-
-        <button class="btn" id="taskNextBtn" disabled style="background-color: #475569; cursor: not-allowed;" onclick="nextAdStep()">পরবর্তী ধাপ</button>
     </div>
 </div>
 
 <!-- প্রোফাইল মডাল -->
-<div id="profileModal" class="modal" style="align-items: center; padding: 20px;">
-    <div class="modal-content" style="height: auto; max-width: 400px; text-align: left;">
-        <span class="close" onclick="closeProfileModal()" style="position: absolute; right: 15px; top: 12px; width: auto; height: auto; background: none; font-size: 22px;">&times;</span>
+<div id="profileModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px;">
+    <div class="modal-content" style="background: var(--card-bg); height: auto; max-width: 400px; padding: 20px; border-radius: 12px; margin: auto; text-align: left;">
         <h3 style="color: #f472b6; margin-top: 0;">👤 Profile</h3>
         <p><b>Name:</b> <span id="profileName">Loading...</span></p>
         <p><b>Telegram UID:</b> <span id="profileId">Loading...</span></p>
@@ -245,10 +218,9 @@
 </div>
 
 <!-- চেকআউট মডাল -->
-<div id="checkoutModal" class="modal" style="align-items: center; padding: 20px;">
-    <div class="modal-content" style="height: auto; max-width: 400px; text-align: left;">
-        <span class="close" onclick="closeCheckout()" style="position: absolute; right: 15px; top: 12px; width: auto; height: auto; background: none; font-size: 22px;">&times;</span>
-        <h3 id="modalTitle" style="color: #f472b6;">পেমেন্ট করুন</h3>
+<div id="checkoutModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px;">
+    <div class="modal-content" style="background: var(--card-bg); height: auto; max-width: 400px; padding: 20px; border-radius: 12px; margin: auto; text-align: left;">
+        <h3 id="modalTitle" style="color: #f472b6; margin-top:0;">পেমেন্ট করুন</h3>
         <div class="copy-box">
             <b id="agentNumber" style="color: #34d399;">01898385521</b>
             <button class="copy-btn" onclick="copyNumber()">📋</button>
@@ -260,7 +232,10 @@
             <div class="form-group"><label>প্রেরক নম্বর</label><input type="text" id="senderNumber" required></div>
             <div class="form-group"><label>টাকার পরিমাণ</label><input type="number" id="paidAmount" required></div>
             <div class="form-group"><label>স্ক্রিনশট</label><input type="file" id="paymentScreenshot" accept="image/*" required></div>
-            <button type="submit" class="btn">সাবমিট করুন</button>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="submit" class="btn">সাবমিট করুন</button>
+                <button type="button" class="btn" style="background: #475569;" onclick="closeCheckout()">বাতিল</button>
+            </div>
         </form>
     </div>
 </div>
@@ -293,7 +268,6 @@
             let isFree = post.type === 'free';
             let isUnlocked = localStorage.getItem(`unlocked_${index}`) === 'true';
             
-            // শুরু থেকে ০/৩ দেখানোর লজিক নিশ্চিত করা
             let stepCount = parseInt(localStorage.getItem(`step_${index}`) || '0');
             if(isUnlocked) stepCount = 3;
 
@@ -363,56 +337,38 @@
         runAdTimerStep();
     }
 
-    function closeTaskModal() {
-        clearInterval(adTimerInterval);
-        document.getElementById('taskModal').style.display = 'none';
-        loadDynamicPosts();
-    }
-
     function runAdTimerStep() {
-        let timerText = document.getElementById('timerText');
-        let nextBtn = document.getElementById('taskNextBtn');
         let adIframe = document.getElementById('adIframe');
-
-        nextBtn.disabled = true;
-        nextBtn.style.backgroundColor = "#475569";
-        nextBtn.style.cursor = "not-allowed";
-        timerText.style.display = "block";
-        
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
         let post = posts[activePostIndex] || { adLink: "https://example.com" };
         
-        // ফুল-স্ক্রিন পপআপের ভেতরে অ্যাড বা লিংক লোড করা
         adIframe.src = post.adLink || "https://example.com";
 
-        let timeLeft = 10;
-        timerText.innerText = `টাইমার: ${timeLeft} সেকেন্ড`;
+        let timeLeft = 10; // ১০ সেকেন্ড সময়
 
         clearInterval(adTimerInterval);
         adTimerInterval = setInterval(() => {
             timeLeft--;
-            timerText.innerText = `টাইমার: ${timeLeft} সেকেন্ড`;
             if (timeLeft <= 0) {
                 clearInterval(adTimerInterval);
-                timerText.innerText = "✅ টাস্ক সম্পন্ন হয়েছে!";
-                nextBtn.disabled = false;
-                nextBtn.style.backgroundColor = "var(--primary)";
-                nextBtn.style.cursor = "pointer";
+                finishCurrentAdStep();
             }
         }, 1000);
     }
 
-    function nextAdStep() {
+    function finishCurrentAdStep() {
+        document.getElementById('taskModal').style.display = 'none';
+        document.getElementById('adIframe').src = ''; // আইফ্রেম ক্লিয়ার করা
+
         if (currentAdStep < 3) {
             localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
-            closeTaskModal();
+            alert(`৩ টির মধ্যে ${currentAdStep} টি অ্যাড দেখা হয়েছে!`);
             loadDynamicPosts();
         } else {
-            // ৩টি টাস্ক কমপ্লিট হলে ফাইল আনলক
             localStorage.setItem(`step_${activePostIndex}`, '3');
             localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
-            alert('অভিনন্দন! আপনার সবকটি টাস্ক সফলভাবে সম্পন্ন হয়েছে এবং ফাইল আনলক হয়ে গেছে।');
-            closeTaskModal();
+            alert('৩ টির মধ্যে ৩ টি অ্যাড দেখা হয়েছে! অভিনন্দন, ফাইল আনলক হয়ে গেছে।');
+            loadDynamicPosts();
         }
     }
 
