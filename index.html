@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geld Spot Shop</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: var(--card-bg);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #334155;
+            position: relative;
+        }
+        h1 { margin: 0; color: #818cf8; font-size: 22px; }
+        
+        .profile-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #334155;
+            color: #818cf8;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 25px;
+            height: 25px;
+            font-size: 16px;
+            border: 1px solid #4f46e5;
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: 20px auto 0 auto;
+            padding: 0 20px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+        .search-input:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+            padding-left: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s ease;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card-img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-bottom: 2px solid #334155;
+        }
+        .card-body {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+        .card h3 { margin: 0 0 5px 0; color: #cbd5e1; font-size: 18px; }
+        
+        .details-link { 
+            display: inline-block;
+            margin: 8px 0 12px 0; 
+            color: #818cf8; 
+            cursor: pointer; 
+            font-size: 14px; 
+            font-weight: bold;
+        }
+        .details-link:hover { text-decoration: underline; }
+        .card p { color: #94a3b8; font-size: 13px; margin-bottom: 0; }
+        .price { font-size: 18px; color: #34d399; font-weight: bold; margin-bottom: 12px; }
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .btn:hover { background-color: #4338ca; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+            margin: auto;
+        }
+        .close {
+            position: absolute; top: 10px; right: 15px;
+            font-size: 24px; cursor: pointer; color: #aaa;
+        }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 13px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 9px; border-radius: 5px; border: 1px solid #475569;
+            background: #0f172a; color: white; box-sizing: border-box;
+        }
+        
+        .copy-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0f172a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            margin: 8px 0 15px 0;
+        }
+        .copy-btn {
+            background: #334155; border: none; color: #818cf8;
+            padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
+        }
+
+        .task-step {
+            background: #0f172a; border: 1px solid #334155; padding: 12px;
+            border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .task-btn {
+            background: #334155; color: #818cf8; border: none; padding: 6px 12px;
+            border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Geld Spot Shop</h1>
+    <p style="margin:5px 0 0 0; font-size: 13px; color:#94a3b8;">Buy premium tools or complete tasks to get free!</p>
+    <div class="profile-icon" onclick="openProfileModal()" title="Profile">👤</div>
+</header>
+
+<div class="search-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Find your product here..." onkeyup="searchProducts()">
+</div>
+
+<div class="container" id="productContainer">
+    
+    <!-- ডাইনামিক পোস্ট কন্টেইনার (অ্যাডমিন প্যানেল থেকে আপলোড করা ফ্রি ও পেইড পোস্ট এখানে দেখাবে) -->
+    <div id="dynamicPostsContainer"></div>
+
+</div>
+
+<!-- টাস্ক পপআপ মডাল (ফ্রি ফাইলের জন্য) -->
+<div id="taskModal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <span class="close" onclick="closeTaskModal()">&times;</span>
+        <h3 style="color: #818cf8; margin-top: 0;">🎯 কমপ্লিট টাস্ক সিস্টেম</h3>
+        <div class="task-step">
+            <div><b>টাস্ক ১: এড ভিজিট (১০ সে.)</b></div>
+            <button class="task-btn" id="btn-t1" onclick="startTask(1)">Start Task</button>
+        </div>
+        <div class="task-step">
+            <div><b>টাস্ক ২: এড ভিজিট (১০ সে.)</b></div>
+            <button class="task-btn" id="btn-t2" onclick="startTask(2)">Start Task</button>
+        </div>
+        <div class="task-step">
+            <div><b>টাস্ক ৩: এড ভিজিট (১০ সে.)</b></div>
+            <button class="task-btn" id="btn-t3" onclick="startTask(3)">Start Task</button>
+        </div>
+        <div class="task-step">
+            <div><b>টাস্ক ৪: সাইন-আপ</b></div>
+            <button class="task-btn" id="btn-t4" onclick="completeFinalTask()">Verify</button>
+        </div>
+        <button class="btn" style="margin-top: 10px;" onclick="closeTaskModal()">Close</button>
+    </div>
+</div>
+
+<!-- প্রোফাইল ও চেকআউট মডাল -->
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeProfileModal()">&times;</span>
+        <h3 style="color: #818cf8; margin-top: 0;">👤 Profile</h3>
+        <p><b>Name:</b> <span id="profileName">Loading...</span></p>
+        <p><b>Telegram UID:</b> <span id="profileId">Loading...</span></p>
+        <button class="btn" onclick="closeProfileModal()">Close</button>
+    </div>
+</div>
+
+<div id="checkoutModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeCheckout()">&times;</span>
+        <h3 id="modalTitle">পেমেন্ট করুন</h3>
+        <div class="copy-box">
+            <b id="agentNumber" style="color: #34d399;">01898385521</b>
+            <button class="copy-btn" onclick="copyNumber()">📋</button>
+        </div>
+        <form id="paymentForm" onsubmit="submitPayment(event)">
+            <input type="hidden" id="productName">
+            <input type="hidden" id="productPrice">
+            <div class="form-group"><label>টেলিগ্রাম UID</label><input type="number" id="tgUser" required></div>
+            <div class="form-group"><label>প্রেরক নম্বর</label><input type="text" id="senderNumber" required></div>
+            <div class="form-group"><label>টাকার পরিমাণ</label><input type="number" id="paidAmount" required></div>
+            <div class="form-group"><label>স্ক্রিনশট</label><input type="file" id="paymentScreenshot" accept="image/*" required></div>
+            <button type="submit" class="btn">সাবমিট করুন</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let tg = window.Telegram.WebApp;
+    tg.expand();
+    let currentUser = tg.initDataUnsafe?.user;
+
+    window.onload = function() {
+        trackVisitor();
+        loadDynamicPosts();
+    };
+
+    function trackVisitor() {
+        let today = new Date().toISOString().split('T')[0];
+        let visits = JSON.parse(localStorage.getItem('site_visits') || '[]');
+        visits.push({ date: today, country: "Bangladesh" });
+        localStorage.setItem('site_visits', JSON.stringify(visits));
+    }
+
+    // পোস্ট রেন্ডার করার ফাংশন (ফ্রি এবং পেইড আলাদা লজিকসহ)
+    function loadDynamicPosts() {
+        let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
+        let container = document.getElementById('dynamicPostsContainer');
+        container.innerHTML = '';
+
+        if(posts.length === 0) {
+            container.innerHTML = `<p style="text-align:center; color:#94a3b8;">কোনো পোস্ট পাওয়া যায়নি। অ্যাডমিন প্যানেل থেকে পোস্ট যোগ করুন।</p>`;
+            return;
+        }
+
+        posts.forEach((post, index) => {
+            let isFree = post.type === 'free';
+            let priceHTML = isFree 
+                ? `<div class="price" style="color: #60a5fa;">সম্পূর্ণ ফ্রি (Task Based)</div>
+                   <span class="details-link" onclick="openTaskModal()">🚀 টাস্ক কমপ্লিট করুন</span>
+                   <button class="btn" id="dlBtn_${index}" onclick="downloadFile('${post.fileLink}')" disabled style="background-color: #475569; cursor: not-allowed;">🔒 Locked (Complete Tasks)</button>`
+                : `<div class="price" style="color: #34d399;">${post.price} টাকা</div>
+                   <button class="btn" onclick="openCheckout('${post.title}', '${post.price} টাকা')">Buy Now</button>`;
+
+            let html = `
+                <div class="section-category">
+                    <div class="section-title">${post.category || 'ক্যাটেগরি'}</div>
+                    <div class="grid">
+                        <div class="card" data-name="${post.title.toLowerCase()}">
+                            <img src="${post.image || 'https://iili.io/CQTNe8g.jpg'}" alt="Post" class="card-img">
+                            <div class="card-body">
+                                <div>
+                                    <h3>${post.title}</h3>
+                                    <p>${post.desc}</p>
+                                </div>
+                                <div>
+                                    ${priceHTML}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+        checkTaskProgress();
+    }
+
+    function openProfileModal() {
+        if (currentUser && currentUser.id) {
+            document.getElementById('profileName').innerText = `${currentUser.first_name}`;
+            document.getElementById('profileId').innerText = currentUser.id;
+        } else {
+            document.getElementById('profileName').innerText = "Guest User";
+            document.getElementById('profileId').innerText = "N/A";
+        }
+        document.getElementById('profileModal').style.display = 'flex';
+    }
+    function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
+    function copyNumber() { navigator.clipboard.writeText("01898385521"); alert('Copied!'); }
+
+    function searchProducts() {
+        let input = document.getElementById('searchInput').value.toLowerCase();
+        let cards = document.getElementsByClassName('card');
+        for (let card of cards) {
+            let name = card.getAttribute('data-name') || '';
+            card.style.display = name.toLowerCase().includes(input) ? "flex" : "none";
+        }
+    }
+
+    function openTaskModal() { document.getElementById('taskModal').style.display = 'flex'; }
+    function closeTaskModal() { document.getElementById('taskModal').style.display = 'none'; }
+
+    function startTask(num) {
+        window.open("https://example.com/ad", '_blank');
+        document.getElementById(`btn-t${num}`).innerText = "Done ✅";
+        document.getElementById(`btn-t${num}`).disabled = true;
+        localStorage.setItem(`task_${num}`, 'completed');
+        checkTaskProgress();
+    }
+    function completeFinalTask() {
+        window.open("https://example.com/signup", '_blank');
+        document.getElementById('btn-t4').innerText = "Verified ✅";
+        document.getElementById('btn-t4').disabled = true;
+        localStorage.setItem('task_4', 'completed');
+        checkTaskProgress();
+    }
+    function checkTaskProgress() {
+        if(localStorage.getItem('task_1') && localStorage.getItem('task_2') && localStorage.getItem('task_3') && localStorage.getItem('task_4')) {
+            // সকল ফ্রি ডাউনলোডের বাটন আনলক হবে
+            let buttons = document.querySelectorAll('[id^="dlBtn_"]');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.innerText = "📥 Download Now";
+                btn.style.backgroundColor = "#34d399";
+                btn.style.color = "#0f172a";
+            });
+        }
+    }
+    function downloadFile(link) { alert('ফাইল ডাউনলোড শুরু হচ্ছে...'); window.location.href = link || "https://example.com/file.zip"; }
+
+    function openCheckout(name, price) {
+        document.getElementById('modalTitle').innerText = name + " - " + price;
+        document.getElementById('productName').value = name;
+        document.getElementById('productPrice').value = price;
+        if (currentUser && currentUser.id) document.getElementById('tgUser').value = currentUser.id;
+        document.getElementById('checkoutModal').style.display = 'flex';
+    }
+    function closeCheckout() { document.getElementById('checkoutModal').style.display = 'none'; }
+
+    async function submitPayment(e) {
+        e.preventDefault();
+        alert('অর্ডার সফলভাবে সাবমিট হয়েছে!');
+        closeCheckout();
+    }
+</script>
+</body>
+</html>
