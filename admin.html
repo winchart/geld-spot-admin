@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geld Spot - Admin Dashboard</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --sidebar-bg: #111827;
+            --text-color: #f8fafc;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* বাম পাশের সাইডবার বাটন মেনু */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 15px;
+            box-sizing: border-box;
+        }
+        .sidebar h2 {
+            color: #818cf8;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .nav-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 12px 15px;
+            text-align: left;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            margin-top: auto;
+        }
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* ডান পাশের মূল কন্টেন্ট এরিয়া */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background-color: var(--bg-color);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+        }
+        h3 { color: #818cf8; text-align: center; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #cbd5e1; }
+        input, textarea, select {
+            width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #475569;
+            background: #0f172a; color: white; box-sizing: border-box; font-size: 15px;
+        }
+        .btn {
+            background-color: var(--primary); color: white; border: none;
+            padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;
+            font-size: 16px; transition: 0.3s;
+        }
+        .btn:hover { background-color: #4338ca; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;
+        }
+        .stat-card h4 { margin: 0 0 8px 0; color: #94a3b8; font-size: 14px; }
+        .stat-card p { margin: 0; color: #34d399; font-size: 22px; font-weight: bold; }
+        
+        .success-msg {
+            background: #065f46; color: #34d399; padding: 10px; border-radius: 6px;
+            text-align: center; margin-bottom: 15px; display: none; font-size: 14px;
+        }
+
+        .post-row {
+            background: #0f172a; border: 1px solid #334155; padding: 12px;
+            border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .action-btns button {
+            padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; margin-left: 5px;
+        }
+        .edit-btn { background: #3b82f6; color: white; }
+        .delete-btn { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+
+<!-- লগইন বক্স -->
+<div class="container" id="loginBox" style="margin: auto; width: 400px; height: fit-content;">
+    <h2>🔐 Admin Login</h2>
+    <div id="loginError" style="color: #ef4444; text-align: center; margin-bottom: 10px; font-size: 13px;"></div>
+    <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+            <label>অ্যাডমিন পাসওয়ার্ড</label>
+            <input type="password" id="adminPass" required placeholder="পাসওয়ার্ড দিন">
+        </div>
+        <button type="submit" class="btn">লগইন করুন</button>
+    </form>
+</div>
+
+<!-- মূল অ্যাডমিন প্যানেল (সাইডবার সহ) -->
+<div id="adminPanel" style="display: none; width: 100%; display: flex; height: 100vh;">
+    
+    <!-- বাম পাশের সাইডবার বাটন মেনু -->
+    <div class="sidebar">
+        <h2>⚡ Geld Spot Admin</h2>
+        <button class="nav-btn active" onclick="switchTab('dashboardTab', this)">📊 ড্যাশবোর্ড</button>
+        <button class="nav-btn" onclick="switchTab('uploadTab', this)">🚀 পোস্ট আপলোড</button>
+        <button class="nav-btn" onclick="switchTab('manageTab', this)">📋 পোস্ট ম্যানেজ (Edit/Delete)</button>
+        <button class="nav-btn logout-btn" onclick="handleLogout()">🚪 লগআউট</button>
+    </div>
+
+    <!-- ডান পাশের কন্টেন্ট সেকশন -->
+    <div class="main-content">
+        
+        <!-- ১. ড্যাশবোর্ড ট্যাব -->
+        <div id="dashboardTab" class="tab-content container">
+            <h3>📊 অ্যাডমিন অ্যানালিটিক্স ড্যাশবোর্ড</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>আজকের মোট ভিজিটর</h4>
+                    <p id="todayVisitors">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>এই মাসের মোট ভিজিটর</h4>
+                    <p id="monthVisitors">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>টোটাল ভিজিটর দেশ</h4>
+                    <p style="font-size: 14px; color: #60a5fa;">Bangladesh</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ২. পোস্ট আপলোড ট্যাব -->
+        <div id="uploadTab" class="tab-content container" style="display: none;">
+            <h3 id="formTitle">🚀 নতুন পোস্ট আপলোড করুন</h3>
+            <div id="successAlert" class="success-msg">সফলভাবে সেভ হয়েছে!</div>
+            
+            <form onsubmit="savePostData(event)">
+                <input type="hidden" id="editIndex" value="-1">
+                <div class="form-group">
+                    <label>পোস্টের ধরণ (Type)</label>
+                    <select id="postType" onchange="togglePriceField()" required>
+                        <option value="free">ফ্রি (এড/টাস্ক দিয়ে লক করা)</option>
+                        <option value="paid">পেইড (টাকার বিনিময়ে)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ক্যাটেগরি নাম</label>
+                    <input type="text" id="postCategory" required placeholder="যেমন: 🛠️ অটো অ্যাপ্রুভাল টুলস">
+                </div>
+                <div class="form-group">
+                    <label>শিরোনাম (Title)</label>
+                    <input type="text" id="postTitle" required placeholder="যেমন: Auto Group Poster">
+                </div>
+                <div class="form-group">
+                    <label>বর্ণনা (Description)</label>
+                    <textarea id="postDesc" rows="3" required placeholder="টুলস বা ফাইলের বিবরণ..."></textarea>
+                </div>
+                <div class="form-group" id="priceGroup" style="display: none;">
+                    <label>মূল্য (Price in Taka)</label>
+                    <input type="number" id="postPrice" placeholder="যেমন: 300">
+                </div>
+                <div class="form-group">
+                    <label>ছবির লিংক (Image URL)</label>
+                    <input type="text" id="postImage" placeholder="https://image-link.com/photo.jpg">
+                </div>
+                <div class="form-group">
+                    <label>ডাউনলোড ফাইল লিংক (File Link)</label>
+                    <input type="text" id="postFileLink" placeholder="https://drive.google.com/...">
+                </div>
+                <button type="submit" class="btn" id="submitBtnText">পোস্ট পাবলিশ করুন</button>
+            </form>
+        </div>
+
+        <!-- ৩. পোস্ট ম্যানেজ (Edit / Delete) ট্যাব -->
+        <div id="manageTab" class="tab-content container" style="display: none;">
+            <h3>📋 বিদ্যমান পোস্টসমূহ (Edit / Delete)</h3>
+            <div id="managePostsList"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const correctPassword = "admin123";
+
+    window.onload = function() {
+        if(localStorage.getItem('isAdminLoggedIn') === 'true') {
+            showPanel();
+        }
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        let pass = document.getElementById('adminPass').value;
+        if(pass === correctPassword) {
+            localStorage.setItem('isAdminLoggedIn', 'true');
+            showPanel();
+        } else {
+            document.getElementById('loginError').innerText = "ভুল পাসওয়ার্ড!";
+        }
+    }
+
+    function showPanel() {
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'flex';
+        calculateAnalytics();
+        renderManageList();
+    }
+
+    // ট্যাব সুইচ করার ফাংশন
+    function switchTab(tabId, btnElement) {
+        let tabs = document.getElementsByClassName('tab-content');
+        for(let t of tabs) { t.style.display = 'none'; }
+        
+        document.getElementById(tabId).style.display = 'block';
+
+        let buttons = document.getElementsByClassName('nav-btn');
+        for(let b of buttons) { b.classList.remove('active'); }
+        btnElement.classList.add('active');
+    }
+
+    function calculateAnalytics() {
+        let visits = JSON.parse(localStorage.getItem('site_visits') || '[]');
+        let today = new Date().toISOString().split('T')[0];
+        let currentMonth = today.substring(0, 7);
+
+        document.getElementById('todayVisitors').innerText = visits.filter(v => v.date === today).length;
+        document.getElementById('monthVisitors').innerText = visits.filter(v => v.date.startsWith(currentMonth)).length;
+    }
+
+    function togglePriceField() {
+        let type = document.getElementById('postType').value;
+        document.getElementById('priceGroup').style.display = (type === 'paid') ? 'block' : 'none';
+    }
+
+    function savePostData(e) {
+        e.preventDefault();
+        let editIdx = parseInt(document.getElementById('editIndex').value);
+        let postData = {
+            type: document.getElementById('postType').value,
+            category: document.getElementById('postCategory').value,
+            title: document.getElementById('postTitle').value,
+            desc: document.getElementById('postDesc').value,
+            price: document.getElementById('postPrice').value || '0',
+            image: document.getElementById('postImage').value,
+            fileLink: document.getElementById('postFileLink').value
+        };
+
+        let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
+
+        if(editIdx === -1) {
+            posts.unshift(postData);
+        } else {
+            posts[editIdx] = postData;
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('formTitle').innerText = "🚀 নতুন পোস্ট আপলোড করুন";
+            document.getElementById('submitBtnText').innerText = "পোস্ট পাবলিশ করুন";
+        }
+
+        localStorage.setItem('admin_posts', JSON.stringify(posts));
+
+        let alertBox = document.getElementById('successAlert');
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+
+        e.target.reset();
+        togglePriceField();
+        renderManageList();
+    }
+
+    function renderManageList() {
+        let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
+        let listContainer = document.getElementById('managePostsList');
+        listContainer.innerHTML = '';
+
+        if(posts.length === 0) {
+            listContainer.innerHTML = `<p style="color:#94a3b8; text-align:center;">কোনো পোস্ট নেই।</p>`;
+            return;
+        }
+
+        posts.forEach((post, index) => {
+            let badge = post.type === 'free' ? '<span style="color:#60a5fa">[ফ্রি]</span>' : '<span style="color:#34d399">[পেইড]</span>';
+            let html = `
+                <div class="post-row">
+                    <div><b>${post.title}</b> ${badge}</div>
+                    <div class="action-btns">
+                        <button class="edit-btn" onclick="editPost(${index})">Edit</button>
+                        <button class="delete-btn" onclick="deletePost(${index})">Delete</button>
+                    </div>
+                </div>
+            `;
+            listContainer.innerHTML += html;
+        });
+    }
+
+    function editPost(index) {
+        let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
+        let p = posts[index];
+
+        document.getElementById('editIndex').value = index;
+        document.getElementById('postType').value = p.type;
+        togglePriceField();
+        document.getElementById('postCategory').value = p.category;
+        document.getElementById('postTitle').value = p.title;
+        document.getElementById('postDesc').value = p.desc;
+        document.getElementById('postPrice').value = p.price;
+        document.getElementById('postImage').value = p.image;
+        document.getElementById('postFileLink').value = p.fileLink;
+
+        document.getElementById('formTitle').innerText = "✏️ পোস্ট এডিট করুন";
+        document.getElementById('submitBtnText').innerText = "আপডেট করুন";
+
+        // স্বয়ংক্রিয়ভাবে 'পোস্ট আপলোড' ট্যাবে নিয়ে যাবে এডিট করার সুবিধার জন্য
+        let uploadBtn = document.querySelectorAll('.nav-btn')[1];
+        switchTab('uploadTab', uploadBtn);
+    }
+
+    function deletePost(index) {
+        if(confirm('আপনি কি নিশ্চিতভাবে এই পোস্টটি ডিলিট করতে চান?')) {
+            let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
+            posts.splice(index, 1);
+            localStorage.setItem('admin_posts', JSON.stringify(posts));
+            renderManageList();
+        }
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('isAdminLoggedIn');
+        location.reload();
+    }
+</script>
+</body>
+</html>
