@@ -184,12 +184,9 @@
 
         .task-step {
             background: #0f172a; border: 1px solid #334155; padding: 12px;
-            border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+            border-radius: 8px; margin-bottom: 10px; text-align: center;
         }
-        .task-btn {
-            background: #334155; color: #818cf8; border: none; padding: 6px 12px;
-            border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;
-        }
+        .timer-text { font-size: 16px; color: #f59e0b; font-weight: bold; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -205,34 +202,18 @@
 </div>
 
 <div class="container" id="productContainer">
-    
-    <!-- ডাইনামিক পোস্ট কন্টেইনার (অ্যাডমিন প্যানেল থেকে আপলোড করা ফ্রি ও পেইড পোস্ট এখানে দেখাবে) -->
     <div id="dynamicPostsContainer"></div>
-
 </div>
 
-<!-- টাস্ক পপআপ মডাল (ফ্রি ফাইলের জন্য) -->
+<!-- অ্যাড ও টাস্ক পপআপ মডাল (ফ্রি ফাইলের জন্য) -->
 <div id="taskModal" class="modal">
-    <div class="modal-content" style="max-width: 450px;">
+    <div class="modal-content" style="max-width: 420px; text-align: center;">
         <span class="close" onclick="closeTaskModal()">&times;</span>
-        <h3 style="color: #818cf8; margin-top: 0;">🎯 কমপ্লিট টাস্ক সিস্টেম</h3>
-        <div class="task-step">
-            <div><b>টাস্ক ১: এড ভিজিট (১০ সে.)</b></div>
-            <button class="task-btn" id="btn-t1" onclick="startTask(1)">Start Task</button>
+        <h3 style="color: #818cf8; margin-top: 0;" id="modalTaskTitle">🎯 অ্যাড ভিজিট ও টাস্ক</h3>
+        
+        <div id="taskBoxBody">
+            <!-- এখানে ডাইনামিক স্টেপ লোড হবে -->
         </div>
-        <div class="task-step">
-            <div><b>টাস্ক ২: এড ভিজিট (১০ সে.)</b></div>
-            <button class="task-btn" id="btn-t2" onclick="startTask(2)">Start Task</button>
-        </div>
-        <div class="task-step">
-            <div><b>টাস্ক ৩: এড ভিজিট (১০ সে.)</b></div>
-            <button class="task-btn" id="btn-t3" onclick="startTask(3)">Start Task</button>
-        </div>
-        <div class="task-step">
-            <div><b>টাস্ক ৪: সাইন-আপ</b></div>
-            <button class="task-btn" id="btn-t4" onclick="completeFinalTask()">Verify</button>
-        </div>
-        <button class="btn" style="margin-top: 10px;" onclick="closeTaskModal()">Close</button>
     </div>
 </div>
 
@@ -272,6 +253,10 @@
     tg.expand();
     let currentUser = tg.initDataUnsafe?.user;
 
+    let currentPostIndex = null;
+    let currentStep = 1; // মোট ৩টি অ্যাড এবং ৪র্থ ধাপে অ্যাপ ডাউনলোড
+    let timerInterval = null;
+
     window.onload = function() {
         trackVisitor();
         loadDynamicPosts();
@@ -284,25 +269,40 @@
         localStorage.setItem('site_visits', JSON.stringify(visits));
     }
 
-    // পোস্ট রেন্ডার করার ফাংশন (ফ্রি এবং পেইড আলাদা লজিকসহ)
     function loadDynamicPosts() {
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
         let container = document.getElementById('dynamicPostsContainer');
         container.innerHTML = '';
 
         if(posts.length === 0) {
-            container.innerHTML = `<p style="text-align:center; color:#94a3b8;">কোনো পোস্ট পাওয়া যায়নি। অ্যাডমিন প্যানেل থেকে পোস্ট যোগ করুন।</p>`;
+            container.innerHTML = `<p style="text-align:center; color:#94a3b8;">কোনো পোস্ট পাওয়া যায়নি। অ্যাডমিন প্যানেল থেকে পোস্ট যোগ করুন।</p>`;
             return;
         }
 
         posts.forEach((post, index) => {
             let isFree = post.type === 'free';
-            let priceHTML = isFree 
-                ? `<div class="price" style="color: #60a5fa;">সম্পূর্ণ ফ্রি (Task Based)</div>
-                   <span class="details-link" onclick="openTaskModal()">🚀 টাস্ক কমপ্লিট করুন</span>
-                   <button class="btn" id="dlBtn_${index}" onclick="downloadFile('${post.fileLink}')" disabled style="background-color: #475569; cursor: not-allowed;">🔒 Locked (Complete Tasks)</button>`
-                : `<div class="price" style="color: #34d399;">${post.price} টাকা</div>
-                   <button class="btn" onclick="openCheckout('${post.title}', '${post.price} টাকা')">Buy Now</button>`;
+            let isUnlocked = localStorage.getItem(`unlocked_${index}`) === 'true';
+
+            let priceHTML = '';
+            if(isFree) {
+                if(isUnlocked) {
+                    priceHTML = `
+                        <div class="price" style="color: #34d399;">আনলক করা হয়েছে</div>
+                        <button class="btn" style="background-color: #34d399; color: #0f172a;" onclick="downloadFile('${post.fileLink}')">📥 Download Now</button>
+                    `;
+                } else {
+                    priceHTML = `
+                        <div class="price" style="color: #60a5fa;">ফ্রি (অ্যাড দেখে আনলক করুন)</div>
+                        <span class="details-link" onclick="openTaskModal(${index})">🚀 টাস্ক স্টার্ট করুন</span>
+                        <button class="btn" id="dlBtn_${index}" disabled style="background-color: #475569; cursor: not-allowed;">🔒 Locked</button>
+                    `;
+                }
+            } else {
+                priceHTML = `
+                    <div class="price" style="color: #34d399;">${post.price} টাকা</div>
+                    <button class="btn" onclick="openCheckout('${post.title}', '${post.price} টাকা')">Buy Now</button>
+                `;
+            }
 
             let html = `
                 <div class="section-category">
@@ -315,7 +315,7 @@
                                     <h3>${post.title}</h3>
                                     <p>${post.desc}</p>
                                 </div>
-                                <div>
+                                <div style="margin-top: 15px;">
                                     ${priceHTML}
                                 </div>
                             </div>
@@ -325,7 +325,6 @@
             `;
             container.innerHTML += html;
         });
-        checkTaskProgress();
     }
 
     function openProfileModal() {
@@ -350,36 +349,85 @@
         }
     }
 
-    function openTaskModal() { document.getElementById('taskModal').style.display = 'flex'; }
-    function closeTaskModal() { document.getElementById('taskModal').style.display = 'none'; }
+    // --- টাস্ক এবং অ্যাড পপআপ লজিক ---
+    function openTaskModal(index) {
+        currentPostIndex = index;
+        currentStep = parseInt(localStorage.getItem(`step_${index}`) || '1');
+        document.getElementById('taskModal').style.display = 'flex';
+        renderTaskStep();
+    }
 
-    function startTask(num) {
-        window.open("https://example.com/ad", '_blank');
-        document.getElementById(`btn-t${num}`).innerText = "Done ✅";
-        document.getElementById(`btn-t${num}`).disabled = true;
-        localStorage.setItem(`task_${num}`, 'completed');
-        checkTaskProgress();
+    function closeTaskModal() {
+        clearInterval(timerInterval);
+        document.getElementById('taskModal').style.display = 'none';
     }
-    function completeFinalTask() {
-        window.open("https://example.com/signup", '_blank');
-        document.getElementById('btn-t4').innerText = "Verified ✅";
-        document.getElementById('btn-t4').disabled = true;
-        localStorage.setItem('task_4', 'completed');
-        checkTaskProgress();
-    }
-    function checkTaskProgress() {
-        if(localStorage.getItem('task_1') && localStorage.getItem('task_2') && localStorage.getItem('task_3') && localStorage.getItem('task_4')) {
-            // সকল ফ্রি ডাউনলোডের বাটন আনলক হবে
-            let buttons = document.querySelectorAll('[id^="dlBtn_"]');
-            buttons.forEach(btn => {
-                btn.disabled = false;
-                btn.innerText = "📥 Download Now";
-                btn.style.backgroundColor = "#34d399";
-                btn.style.color = "#0f172a";
-            });
+
+    function renderTaskStep() {
+        let bodyDiv = document.getElementById('taskBoxBody');
+        let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
+        let post = posts[currentPostIndex];
+        let adLink = post.adLink || "https://example.com/ad";
+
+        if (currentStep <= 3) {
+            bodyDiv.innerHTML = `
+                <p style="color: #cbd5e1;"><b>স্টেপ ${currentStep} / ৩:</b> নিচের বাটনে ক্লিক করে অ্যাড ভিজিট করুন।</p>
+                <button class="btn" onclick="startAdVisit('${adLink}')" style="margin: 10px 0;">🚀 অ্যাড ভিজিট করুন</button>
+                <div id="timerDisplay" class="timer-text" style="display: none;">টাইমার: <span id="secCount">10</span> সেকেন্ড</div>
+                <button class="btn" id="nextAdBtn" disabled style="background-color: #475569; cursor: not-allowed; margin-top: 10px;" onclick="nextStep()">পরবর্তী অ্যাড</button>
+            `;
+        } else {
+            bodyDiv.innerHTML = `
+                <p style="color: #cbd5e1;"><b>শেষ ধাপ (৪):</b> ফাইল আনলক করতে অ্যাপ বা অফারটি ডাউনলোড করুন।</p>
+                <button class="btn" onclick="downloadAppTask('${adLink}')" style="margin: 10px 0; background-color: #3b82f6;">📲 অ্যাপ ডাউনলোড করুন</button>
+                <button class="btn" id="verifyBtn" style="margin-top: 10px; background-color: #34d399; color: #0f172a;" onclick="verifyAndUnlock()">✅ ডাউনলোড সম্পন্ন হয়েছে (Verify)</button>
+            `;
         }
     }
-    function downloadFile(link) { alert('ফাইল ডাউনলোড শুরু হচ্ছে...'); window.location.href = link || "https://example.com/file.zip"; }
+
+    function startAdVisit(url) {
+        window.open(url, '_blank');
+        let timerSpan = document.getElementById('secCount');
+        let timerDiv = document.getElementById('timerDisplay');
+        timerDiv.style.display = 'block';
+        let timeLeft = 10;
+        timerSpan.innerText = timeLeft;
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerSpan.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerDiv.innerText = "✅ অ্যাড দেখা শেষ!";
+                let nextBtn = document.getElementById('nextAdBtn');
+                nextBtn.disabled = false;
+                nextBtn.style.backgroundColor = "var(--primary)";
+                nextBtn.style.cursor = "pointer";
+            }
+        }, 1000);
+    }
+
+    function nextStep() {
+        currentStep++;
+        localStorage.setItem(`step_${currentPostIndex}`, currentStep);
+        renderTaskStep();
+    }
+
+    function downloadAppTask(url) {
+        window.open(url, '_blank');
+    }
+
+    function verifyAndUnlock() {
+        localStorage.setItem(`unlocked_${currentPostIndex}`, 'true');
+        alert('অভিনন্দন! আপনার ফাইলটি সফলভাবে আনলক হয়ে গেছে।');
+        closeTaskModal();
+        loadDynamicPosts();
+    }
+
+    function downloadFile(link) { 
+        alert('ফাইল ডাউনলোড শুরু হচ্ছে...'); 
+        window.location.href = link || "https://example.com/file.zip"; 
+    }
 
     function openCheckout(name, price) {
         document.getElementById('modalTitle').innerText = name + " - " + price;
@@ -392,7 +440,7 @@
 
     async function submitPayment(e) {
         e.preventDefault();
-        alert('অর্ডার সফলভাবে সাবমিট হয়েছে!');
+        alert('অর্ডার সফলভাবে সাবমিট হয়েছে!');
         closeCheckout();
     }
 </script>
