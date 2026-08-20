@@ -130,20 +130,17 @@
         }
         .btn:hover { background-color: #be185d; }
         
-        /* সম্পূর্ণ স্ক্রিন জুড়ে পপআপ মডাল (নো ক্রস, নো বাটন) */
+        /* ফুল-স্ক্রিন অ্যাড মডাল */
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: #000000;
-            justify-content: center;
-            align-items: center;
             z-index: 1000;
-            padding: 0;
+            flex-direction: column;
             box-sizing: border-box;
         }
         .modal-content {
-            background: #000000;
             width: 100%;
             height: 100%;
             position: relative;
@@ -152,13 +149,46 @@
             box-sizing: border-box;
         }
         
-        /* অ্যাড বা আইফ্রেম যা একদম ফুল স্ক্রিন থাকবে */
         .in-app-ad-frame {
             flex-grow: 1;
             width: 100%;
             height: 100%;
             background: #ffffff;
             border: none;
+        }
+
+        /* সুন্দর ফ্ল্যাট লাইভ টাইমার হেডার */
+        .ad-timer-bar {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.85);
+            color: #f59e0b;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 15px;
+            border: 1px solid #db2777;
+            z-index: 1010;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* টোস্ট নোটিফিকেশন স্টাইল (OK বাটন ছাড়া নিজে থেকেই হাইড হবে) */
+        #toastNotification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: none;
+            transition: 0.3s;
         }
 
         .form-group { margin-bottom: 12px; text-align: left; }
@@ -200,16 +230,20 @@
     <div id="dynamicPostsContainer"></div>
 </div>
 
-<!-- ফুল-স্ক্রিন অটো-ক্লোজ অ্যাড পপআপ মডাল -->
+<!-- ফুল-স্ক্রিন অটো-ক্লোজ অ্যাড মডাল উইথ লাইভ টাইমার -->
 <div id="taskModal" class="modal">
     <div class="modal-content">
+        <div id="adTimerBar" class="ad-timer-bar">টাইমার: ১০ সে.</div>
         <iframe id="adIframe" class="in-app-ad-frame" src=""></iframe>
     </div>
 </div>
 
+<!-- টোস্ট নোটিফিকেশন বার -->
+<div id="toastNotification">সফল বার্তা</div>
+
 <!-- প্রোফাইল মডাল -->
-<div id="profileModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px;">
-    <div class="modal-content" style="background: var(--card-bg); height: auto; max-width: 400px; padding: 20px; border-radius: 12px; margin: auto; text-align: left;">
+<div id="profileModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px; justify-content: center; align-items: center;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; text-align: left;">
         <h3 style="color: #f472b6; margin-top: 0;">👤 Profile</h3>
         <p><b>Name:</b> <span id="profileName">Loading...</span></p>
         <p><b>Telegram UID:</b> <span id="profileId">Loading...</span></p>
@@ -218,8 +252,8 @@
 </div>
 
 <!-- চেকআউট মডাল -->
-<div id="checkoutModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px;">
-    <div class="modal-content" style="background: var(--card-bg); height: auto; max-width: 400px; padding: 20px; border-radius: 12px; margin: auto; text-align: left;">
+<div id="checkoutModal" class="modal" style="background: rgba(0,0,0,0.85); padding: 20px; justify-content: center; align-items: center;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; text-align: left;">
         <h3 id="modalTitle" style="color: #f472b6; margin-top:0;">পেমেন্ট করুন</h3>
         <div class="copy-box">
             <b id="agentNumber" style="color: #34d399;">01898385521</b>
@@ -260,7 +294,7 @@
 
         if(posts.length === 0) {
             posts = [
-                { title: "Group Finder Tool", desc: "Very easy tool", type: "free", image: "https://iili.io/CQTNe8g.jpg", adLink: "https://example.com", fileLink: "#" }
+                { title: "Group Finder Tool", desc: "Very easy tool", type: "free", image: "https://iili.io/CQTNe8g.jpg", adLink: "https://www.wikipedia.org", fileLink: "#" }
             ];
         }
 
@@ -339,16 +373,19 @@
 
     function runAdTimerStep() {
         let adIframe = document.getElementById('adIframe');
+        let timerBar = document.getElementById('adTimerBar');
         let posts = JSON.parse(localStorage.getItem('admin_posts') || '[]');
-        let post = posts[activePostIndex] || { adLink: "https://example.com" };
+        let post = posts[activePostIndex] || { adLink: "https://www.wikipedia.org" };
         
-        adIframe.src = post.adLink || "https://example.com";
+        adIframe.src = post.adLink || "https://www.wikipedia.org";
 
         let timeLeft = 10; // ১০ সেকেন্ড সময়
+        timerBar.innerText = `টাইমার: ${timeLeft} সে.`;
 
         clearInterval(adTimerInterval);
         adTimerInterval = setInterval(() => {
             timeLeft--;
+            timerBar.innerText = `টাইমার: ${timeLeft} সে.`;
             if (timeLeft <= 0) {
                 clearInterval(adTimerInterval);
                 finishCurrentAdStep();
@@ -362,19 +399,28 @@
 
         if (currentAdStep < 3) {
             localStorage.setItem(`step_${activePostIndex}`, currentAdStep);
-            alert(`৩ টির মধ্যে ${currentAdStep} টি অ্যাড দেখা হয়েছে!`);
+            showToast(`৩ টির মধ্যে ${currentAdStep} টি অ্যাড দেখা হয়েছে!`);
             loadDynamicPosts();
         } else {
             localStorage.setItem(`step_${activePostIndex}`, '3');
             localStorage.setItem(`unlocked_${activePostIndex}`, 'true');
-            alert('৩ টির মধ্যে ৩ টি অ্যাড দেখা হয়েছে! অভিনন্দন, ফাইল আনলক হয়ে গেছে।');
+            showToast('৩ টির মধ্যে ৩ টি অ্যাড দেখা হয়েছে! ফাইল আনলক হয়ে গেছে।');
             loadDynamicPosts();
         }
     }
 
+    function showToast(message) {
+        let toast = document.getElementById('toastNotification');
+        toast.innerText = message;
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+
     function downloadFile(link) { 
-        alert('ফাইল ডাউনলোড শুরু হচ্ছে...'); 
-        window.location.href = link || "https://example.com/file.zip"; 
+        showToast('ফাইল ডাউনলোড শুরু হচ্ছে...'); 
+        window.location.href = link || "#"; 
     }
 
     function openCheckout(name, price) {
@@ -388,7 +434,7 @@
 
     async function submitPayment(e) {
         e.preventDefault();
-        alert('অর্ডার সফলভাবে সাবমিট হয়েছে!');
+        showToast('অর্ডার সফলভাবে সাবমিট হয়েছে!');
         closeCheckout();
     }
 </script>
